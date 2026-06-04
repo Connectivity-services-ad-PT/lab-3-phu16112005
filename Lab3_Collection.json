@@ -1,0 +1,85 @@
+{
+    "item":  [
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "url":  {
+                                                 "host":  [
+                                                              "{{url}}"
+                                                          ],
+                                                 "raw":  "{{url}}/users",
+                                                 "path":  [
+                                                              "users"
+                                                          ]
+                                             }
+                                 },
+                     "name":  "Get All Users",
+                     "response":  [
+                                      {
+                                          "body":  "[{\"id\": 1, \"name\": \"Phu16112005\", \"role\": \"Student\"}]",
+                                          "status":  "OK",
+                                          "code":  200,
+                                          "name":  "Success 200 OK",
+                                          "_postman_previewlanguage":  "json"
+                                      }
+                                  ]
+                 },
+                 {
+                     "request":  {
+                                     "body":  {
+                                                  "raw":  "{\"name\": \"New User\"}",
+                                                  "mode":  "raw"
+                                              },
+                                     "method":  "POST",
+                                     "url":  {
+                                                 "host":  [
+                                                              "{{url}}"
+                                                          ],
+                                                 "raw":  "{{url}}/users",
+                                                 "path":  [
+                                                              "users"
+                                                          ]
+                                             }
+                                 },
+                     "name":  "Create User",
+                     "response":  [
+                                      {
+                                          "body":  "{\"message\": \"User created successfully\", \"id\": 2}",
+                                          "status":  "Created",
+                                          "code":  201,
+                                          "name":  "Created 201",
+                                          "_postman_previewlanguage":  "json"
+                                      }
+                                  ]
+                 },
+                 {
+                     "request":  {
+                                     "method":  "GET",
+                                     "url":  {
+                                                 "host":  [
+                                                              "{{url}}"
+                                                          ],
+                                                 "raw":  "{{url}}/users/999",
+                                                 "path":  [
+                                                              "users",
+                                                              "999"
+                                                          ]
+                                             }
+                                 },
+                     "name":  "Get Non-existent User",
+                     "response":  [
+                                      {
+                                          "body":  "{\"error\": \"User not found\"}",
+                                          "status":  "Not Found",
+                                          "code":  404,
+                                          "name":  "Not Found 404",
+                                          "_postman_previewlanguage":  "json"
+                                      }
+                                  ]
+                 }
+             ],
+    "info":  {
+                 "name":  "Lab3_Mock_Testing_Collection",
+                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+             }
+}
