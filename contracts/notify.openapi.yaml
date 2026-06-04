@@ -1,0 +1,301 @@
+openapi: 3.1.0
+info:
+  title: API Gateway & Notification Service - Nhom 7A (productA) [Lab 02]
+  version: 1.0.0
+  description: |
+    ### TAI LIEU HOP DONG THIET KE API (API CONTRACT) - BAI TAP PHAT TRIEN LAB 02
+  contact:
+    name: Nguyen Trung Kien
+    email: kien.nt.7a@example.edu.vn
+
+servers:
+  - url: http://localhost:4010
+  - url: https://api.campus.local
+
+tags:
+  - name: health
+  - name: alerts
+  - name: events
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      description: Check service health status
+      tags: [health]
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /alerts:
+    post:
+      operationId: createAlert
+      description: Create a new alert from a source service
+      tags: [alerts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAlertRequest'
+      responses:
+        '201':
+          description: Alert created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    get:
+      operationId: listAlerts
+      description: List all alerts with optional cursor-based pagination
+      tags: [alerts]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertPage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /alerts/recent:
+    get:
+      operationId: getRecentAlerts
+      description: Get the most recent alerts up to a specified limit
+      tags: [alerts]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: List of recent alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+        '400':
+          description: Invalid limit parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /alerts/{alertId}:
+    get:
+      operationId: getAlertById
+      description: Get a specific alert by its UUID
+      tags: [alerts]
+      parameters:
+        - $ref: '#/components/parameters/AlertId'
+      responses:
+        '200':
+          description: Alert found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /events:
+    post:
+      operationId: createCampusEvent
+      description: Submit a campus event to be processed by the notification service
+      tags: [events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampusEvent'
+      responses:
+        '201':
+          description: Event accepted for processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAccepted'
+        '400':
+          description: Invalid event payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: [string, "null"]
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status, service, time]
+      properties:
+        status: {type: string}
+        service: {type: string}
+        time: {type: string, format: date-time}
+
+    CreateAlertRequest:
+      type: object
+      required: [sourceService, alertType, severity, message]
+      properties:
+        sourceService:
+          type: string
+          enum: [iot-ingestion, ai-vision, access-gate, camera, analytics, core]
+        alertType:
+          type: string
+          enum: [sensor-anomaly, intrusion-detected, access-denied, fire-detected, system-error]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        message: {type: string}
+        relatedEventId:
+          type: [string, "null"]
+          format: uuid
+
+    Alert:
+      allOf:
+        - $ref: '#/components/schemas/CreateAlertRequest'
+        - type: object
+          required: [id, status, createdAt]
+          properties:
+            id: {type: string, format: uuid}
+            status:
+              type: string
+              enum: [active, resolved, acknowledged]
+            createdAt: {type: string, format: date-time}
+            resolvedAt:
+              type: [string, "null"]
+              format: date-time
+
+    AlertPage:
+      type: object
+      required: [items, nextCursor, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        nextCursor:
+          type: [string, "null"]
+        hasMore: {type: boolean}
+
+    CampusEvent:
+      type: object
+      required: [eventType]
+      properties:
+        eventType:
+          type: string
+          enum: [motion-detected, door-opened, temperature-spike, smoke-detected, access-granted, access-denied]
+
+    EventAccepted:
+      type: object
+      required: [eventId, acceptedAt]
+      properties:
+        eventId: {type: string, format: uuid}
+        acceptedAt: {type: string, format: date-time}
+
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: {type: string, format: uri}
+        title: {type: string}
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail: {type: [string, "null"]}
+        instance:
+          type: [string, "null"]
+          format: uri
+        errors:
+          type: array
+          items:
+            type: object
